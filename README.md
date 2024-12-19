@@ -1,7 +1,7 @@
 ## Inventory Management System
 
 ### Environment:
-.NET 7
+.NET 8
 
 ### Read-Only Files:
 InventoryManagement.Tests/IntegrationTests.cs
