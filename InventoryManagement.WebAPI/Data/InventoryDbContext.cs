@@ -10,6 +10,6 @@ namespace InventoryManagement.WebAPI.Data
         }
 
         public DbSet<InventoryItem> InventoryItems { get; set; }
-        public DbSet<DiscrepancyRecord> Discrepancies { get; set; }
+        public DbSet<DiscrepancyRecord> DiscrepancyRecords { get; set; }
     }
 }
