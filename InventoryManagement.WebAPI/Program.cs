@@ -1,4 +1,5 @@
 using InventoryManagement.WebAPI.Data;
+using InventoryManagement.WebAPI.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
+
+app.UseRouting();
 
 app.UseAuthorization();
 
