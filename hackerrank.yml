@@ -1,0 +1,16 @@
+version: 1.0
+configuration:
+  has_webserver: true
+  readonly_paths:
+    - InventoryManagement.Tests/IntegrationTests.cs
+  scoring:
+    command: rm -rf reports && dotnet build && dotnet test --logger xunit --results-directory ./reports/
+    files: [reports/TestResults.xml]
+  ide_config:
+    default_open_files:
+      - InventoryManagement.WebAPI/Controllers/InventoryController.cs
+      - InventoryManagement.WebAPI/Startup.cs
+    project_menu:
+      run: dotnet build && dotnet run --project InventoryManagement.WebAPI
+      install: dotnet build
+      test: rm -rf reports && dotnet build && dotnet test --logger xunit --results-directory ./
