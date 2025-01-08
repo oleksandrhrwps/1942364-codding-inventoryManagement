@@ -1,10 +1,12 @@
+using InventoryManagement.WebAPI;
 using InventoryManagement.WebAPI.Data;
 using InventoryManagement.WebAPI.Models;
-using Microsoft.AspNetCore.Mvc;
+using InventoryManagement.WebAPI.Models.Dto;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Collections;
 using System.Text;
 using System.Text.Json;
@@ -19,6 +21,9 @@ namespace InventoryManagement.Tests
         private const string ApiEndpointVerifyItem = "/api/inventory/verify-item";
         private const string ApiEndpointDiscrepancies = "/api/inventory/discrepancies";
 
+        private const string CsvFilePath = "ItemsCollection.csv";
+        private const string LogFilePath = "http_log.txt";
+
         public HttpClient Client { get; private set; }
         private InventoryDbContext _db;
 
@@ -28,10 +33,108 @@ namespace InventoryManagement.Tests
             SetUpClient();
         }
 
+        #region middleware tests
+
+        [Fact]
+        public async Task Test_LoggingMiddleware_LogExists()
+        {
+            RemoveLogFile();
+            
+            if (!await SendVerifyItemRequests())
+            {
+                Assert.Fail("Failed to send verify item requests");
+            }
+
+            var logExists = File.Exists(LogFilePath);
+            Assert.True(logExists);
+
+        }
+
+        [Fact]
+        public async Task Test_LoggingMiddleware_RequestLogged()
+        {
+            RemoveLogFile();
+
+            if (!await SendVerifyItemRequests())
+            {
+                Assert.Fail("Failed to send verify item requests");
+            }
+
+            var logExists = File.Exists(LogFilePath);
+
+            Assert.True(logExists);
+
+            var logContent = await File.ReadAllTextAsync(LogFilePath);
+            Assert.Contains($"Request: POST {ApiEndpointVerifyItem}", logContent);
+            Assert.Contains($"Request: POST {ApiEndpointUploadCsv}", logContent);
+        }
+
+        [Fact]
+        public async Task Test_LoggingMiddleware_HeadersLogged()
+        {
+            RemoveLogFile();
+
+            if (!await SendVerifyItemRequests())
+            {
+                Assert.Fail("Failed to send verify item requests");
+            }
+
+            var logExists = File.Exists(LogFilePath);
+
+            Assert.True(logExists);
+
+            var logContent = await File.ReadAllTextAsync(LogFilePath);
+            Assert.Contains("Headers:", logContent);
+            Assert.Contains("[Content-Type, application/json; charset=utf-8]", logContent);
+            Assert.Contains("[Content-Length, 118]", logContent);
+            Assert.Contains("[Host, localhost]", logContent);
+            Assert.Contains("[Content-Type, text/plain; charset=utf-8]", logContent);
+        }
+
+        [Fact]
+        public async Task Test_LoggingMiddleware_ResponseLogged()
+        {
+            RemoveLogFile();
+
+            if (!await SendVerifyItemRequests())
+            {
+                Assert.Fail("Failed to send verify item requests");
+            }
+
+            var logExists = File.Exists(LogFilePath);
+
+            Assert.True(logExists);
+
+            var logContent = await File.ReadAllTextAsync(LogFilePath);
+            Assert.Contains($"Response: 200", logContent);
+        }
+
+        [Fact]
+        public async Task Test_LoggingMiddleware_TimeLogged()
+        {
+            RemoveLogFile();
+
+            if (!await SendVerifyItemRequests())
+            {
+                Assert.Fail("Failed to send verify item requests");
+            }
+
+            var logExists = File.Exists(LogFilePath);
+
+            Assert.True(logExists);
+
+            var logContent = await File.ReadAllTextAsync(LogFilePath);
+            Assert.Contains($"Time taken:", logContent);
+        }
+
+        #endregion
+
+        #region Endpoints Tests
+
         [Fact]
         public async Task Test_UploadCsv_Returns200()
         {
-            var stringContent = await GetStringContentAsync("ItemsCollection.csv");
+            var stringContent = await GetStringContentAsync(CsvFilePath);
             var response = await Client.PostAsync(ApiEndpointUploadCsv, stringContent);
 
             Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
@@ -61,7 +164,7 @@ namespace InventoryManagement.Tests
                 Barcode = Guid.Empty,
                 StorageLocationName = "Test Location",
                 ItemDescription = "Test Description",
-                CreatedDate = DateTime.Now.AddDays(-30),
+                CreatedDate = DateTime.Now.AddDays(30),
             };
             var stringContent = GetStringContent(inventoryItem);
             var response = await Client.PostAsync(ApiEndpointUploadCsv, stringContent);
@@ -88,8 +191,13 @@ namespace InventoryManagement.Tests
         [Fact]
         public async Task Test_VerifyItem_Returns404()
         {
-            var response =
-                await Client.GetAsync($"{ApiEndpointVerifyItem}?barcode={Guid.NewGuid()}&currentLocation=SampleLocation");
+            var verifyResponce = new ItemVerificationDto
+            {
+                Barcode = Guid.NewGuid(),
+                StorageLocationName = "SampleLocation",
+            };
+
+            var response = await Client.PostAsync(ApiEndpointVerifyItem, GetStringContent(verifyResponce));
 
             Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
         }
@@ -97,6 +205,8 @@ namespace InventoryManagement.Tests
         [Fact]
         public async Task Test_VerifyItem_Returns200()
         {
+            ResetDatabase();
+
             var generatedGuid = Guid.NewGuid();
             var locationName = "Test Location";
 
@@ -112,8 +222,13 @@ namespace InventoryManagement.Tests
 
             Assert.Equal(System.Net.HttpStatusCode.OK, responsePrepareData.StatusCode);
 
-            var response =
-                await Client.GetAsync($"{ApiEndpointVerifyItem}?barcode={generatedGuid}&currentLocation={locationName}");
+            var verifyResponce = new ItemVerificationDto
+            {
+                Barcode = generatedGuid,
+                StorageLocationName = locationName,
+            };
+
+            var response = await Client.PostAsync(ApiEndpointVerifyItem, GetStringContent(verifyResponce));
 
             Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
@@ -121,6 +236,8 @@ namespace InventoryManagement.Tests
         [Fact]
         public async Task Test_VerifyItem_Returns400()
         {
+            ResetDatabase();
+
             var generatedGuid = Guid.NewGuid();
             var expectedLocationName = "Expected Location";
             var actualLocationName = "Actual Location";
@@ -137,8 +254,13 @@ namespace InventoryManagement.Tests
 
             Assert.Equal(System.Net.HttpStatusCode.OK, responsePrepareData.StatusCode);
 
-            var response =
-                await Client.GetAsync($"{ApiEndpointVerifyItem}?barcode={generatedGuid}&currentLocation={expectedLocationName}");
+            var verifyResponce = new ItemVerificationDto
+            {
+                Barcode = generatedGuid,
+                StorageLocationName = expectedLocationName,
+            };
+
+            var response = await Client.PostAsync(ApiEndpointVerifyItem, GetStringContent(verifyResponce));
 
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         }
@@ -154,7 +276,7 @@ namespace InventoryManagement.Tests
                 new() { Barcode = Guid.NewGuid(), ScanningDate = DateTime.UtcNow, ActualStorageLocation = "Location2" },
             };
 
-            _db.DiscrepancyRecords.AddRange();
+            _db.DiscrepancyRecords.AddRange(testData);
 
             await _db.SaveChangesAsync();
 
@@ -170,6 +292,10 @@ namespace InventoryManagement.Tests
             Assert.Equal(testData.Count, discrepancies.Cast<object>().Count());
         }
 
+        #endregion
+
+        #region Helper Methods
+
         private static async Task<StringContent> GetStringContentAsync(string csvFilePath)
         {
             var csvData = await File.ReadAllTextAsync(csvFilePath);
@@ -179,40 +305,69 @@ namespace InventoryManagement.Tests
 
         private static StringContent GetStringContent(InventoryItem item)
         {
-            var csvData = $"{item.Barcode},{item.StorageLocationName},{item.ItemDescription},{item.CreatedDate}";
-            var csvBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(csvData));
-            return new StringContent($"\"{csvBase64}\"", Encoding.UTF8, "application/json");
+            var stringData = $"{item.Barcode},{item.StorageLocationName},{item.ItemDescription},{item.CreatedDate}";
+            var stringBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(stringData));
+            return new StringContent($"\"{stringBase64}\"", Encoding.UTF8, "application/json");
+        }
+
+        private static StringContent GetStringContent(object item)
+        {
+            var stringData = JsonSerializer.Serialize(item);
+            return new StringContent(stringData, Encoding.UTF8, "application/json");
+        }
+
+        private async Task<bool> SendVerifyItemRequests()
+        {
+            ResetDatabase();
+
+            var generatedGuid = Guid.NewGuid();
+            var locationName = "Test Location";
+
+            var inventoryItem = new InventoryItem
+            {
+                Barcode = generatedGuid,
+                StorageLocationName = locationName,
+                ItemDescription = "Test Description",
+                CreatedDate = DateTime.Now.AddDays(-30),
+            };
+            var stringContent = GetStringContent(inventoryItem);
+            var responsePrepareData = await Client.PostAsync(ApiEndpointUploadCsv, stringContent);
+
+            if (responsePrepareData.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                return false;
+            }
+
+            var verifyResponce = new ItemVerificationDto
+            {
+                Barcode = generatedGuid,
+                StorageLocationName = locationName,
+            };
+
+            var response = await Client.PostAsync(ApiEndpointVerifyItem, GetStringContent(verifyResponce));
+
+            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void SetUpClient()
         {
             Client = _factory.WithWebHostBuilder(builder =>
-                builder.ConfigureServices(services =>
+                builder.UseStartup<Startup>()
+                .ConfigureServices(services =>
                 {
-                    // Remove existing DbContext registration
-                    var descriptor = services.SingleOrDefault(
-                        d => d.ServiceType == typeof(DbContextOptions<InventoryDbContext>));
+                    _db = new InventoryDbContext(new DbContextOptionsBuilder<InventoryDbContext>()
+                        .UseSqlite("DataSource=:memory:")
+                        .EnableSensitiveDataLogging()
+                        .Options);
 
-                    if (descriptor != null)
-                    {
-                        services.Remove(descriptor);
-                    }
+                    services.RemoveAll(typeof(InventoryDbContext));
+                    services.AddSingleton(_db);
 
-                    // Add a new DbContext for testing with in-memory SQLite database
-                    services.AddDbContext<InventoryDbContext>(options =>
-                    {
-                        //options.UseSqlite("Data Source=:memory:")
-                        //       .EnableSensitiveDataLogging();
-                        options.UseInMemoryDatabase("InventoryDb");
-                    });
-
-                    // Build a service provider to instantiate the context
-                    var sp = services.BuildServiceProvider();
-
-                    // Create a new scope to setup the database
-                    using var scope = sp.CreateScope();                    
-                    var scopedServices = scope.ServiceProvider;
-                    _db = scopedServices.GetRequiredService<InventoryDbContext>();
                     _db.Database.OpenConnection();
                     _db.Database.EnsureCreated();
 
@@ -223,8 +378,8 @@ namespace InventoryManagement.Tests
                     {
                         entity.State = EntityState.Detached;
                     }
-
                 })).CreateClient();
+
         }
 
         private void ResetDatabase()
@@ -234,6 +389,22 @@ namespace InventoryManagement.Tests
                 _db.Database.EnsureDeleted();
                 _db.Database.EnsureCreated();
             }
+        }
+
+        private void RemoveLogFile()
+        {
+            if (File.Exists(LogFilePath))
+            {
+                File.Delete(LogFilePath);
+            }
+        }
+
+        #endregion
+
+        public void Dispose()
+        {
+            _db?.Dispose();
+            Client?.Dispose();
         }
     }
 }
