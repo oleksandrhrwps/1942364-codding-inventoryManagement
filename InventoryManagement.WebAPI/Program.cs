@@ -1,32 +1,11 @@
-using InventoryManagement.WebAPI.Data;
-using InventoryManagement.WebAPI.Middleware;
-using Microsoft.EntityFrameworkCore;
+using InventoryManagement.WebAPI;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
 
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddDbContext<InventoryDbContext>(options =>
-    options.UseInMemoryDatabase("InventoryDb"));
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-
-app.UseHttpsRedirection();
-
-app.UseMiddleware<RequestResponseLoggingMiddleware>();
-
-app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+builder.Build().Run();
 
 public partial class Program { }
