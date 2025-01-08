@@ -44,52 +44,6 @@ namespace InventoryManagement.WebAPI.Controllers
             return Ok($"{newItems.Count} items uploaded successfully.");
         }
 
-        private static (List<InventoryItem>, string) ParseInventoryItemsFromCsv(string csvContent)
-        {
-            var items = new List<InventoryItem>();
-            var lines = csvContent.Split('\n');
-
-            foreach (var line in lines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                var values = line.Split(',');
-
-                if (values.Length < 4)
-                {
-                    return (items, "Each line must have at least 4 values.");
-                }
-
-                if (!Guid.TryParse(values[0], out var barcode))
-                {
-                    return (items, $"Invalid GUID found: {values[0]}");
-                }
-                
-                var storageLocationName = values[1].Trim();
-                var createdDate = DateTime.Parse(values[3].Trim());
-
-                if (createdDate > DateTime.UtcNow)
-                {
-                    return (items, "Created Date cannot be in the future.");
-                }
-
-                var item = new InventoryItem
-                {
-                    Barcode = barcode,
-                    StorageLocationName = storageLocationName,
-                    ItemDescription = values.Length >= 3 ? values[2].Trim() : string.Empty,
-                    CreatedDate = createdDate
-                };
-
-                items.Add(item);
-            }
-
-            return (items, string.Empty);
-        }
-
         [HttpPost("verify-item")]
         public async Task<IActionResult> VerifyItem([FromBody] ItemVerificationDto itemVerification)
         {
@@ -135,6 +89,58 @@ namespace InventoryManagement.WebAPI.Controllers
             var result = await query.ToListAsync();
 
             return Ok(result);
+        }
+
+        private static (List<InventoryItem>, string) ParseInventoryItemsFromCsv(string csvContent)
+        {
+            var items = new List<InventoryItem>();
+            var lines = csvContent.Split('\n');
+
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                var values = line.Split(',');
+
+                if (values.Length < 4)
+                {
+                    return (items, "Each line must have at least 4 values.");
+                }
+
+                if (!Guid.TryParse(values[0], out var barcode))
+                {
+                    return (items, $"Invalid GUID found: {values[0]}");
+                }
+
+                var storageLocationName = values[1].Trim();
+
+                if (string.IsNullOrWhiteSpace(storageLocationName))
+                {
+                    return (items, $"Storage Location Name cannot be empty or contains only spaces: {values[1]}");
+                }
+
+                var createdDate = DateTime.Parse(values[3].Trim());
+
+                if (createdDate > DateTime.UtcNow)
+                {
+                    return (items, "Created Date cannot be in the future.");
+                }
+
+                var item = new InventoryItem
+                {
+                    Barcode = barcode,
+                    StorageLocationName = storageLocationName,
+                    ItemDescription = values.Length >= 3 ? values[2].Trim() : string.Empty,
+                    CreatedDate = createdDate
+                };
+
+                items.Add(item);
+            }
+
+            return (items, string.Empty);
         }
     }
 }
