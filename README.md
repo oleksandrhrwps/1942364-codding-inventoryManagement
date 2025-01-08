@@ -42,10 +42,15 @@ Support optional filters for retrieval by scanning date and storage location.
 Return Status 200 (OK) for successful retrieval.
 
 **4. Measurements and error handling**
-Create a custom middleware that tracks all incoming HTTP requests and responses. The middleware should log the following details to a text file:
+Create a custom middleware that tracks all incoming HTTP requests and responses. The middleware should log the following details to a text file "http_log.txt":
 
 * _Request path, body (and headers, if exist)_
+"Request: {Method} {Path}"
+"Headers: {Headers separated by '; '}"
 * _Response status code (and headers if exist)_
+"Response: {StatusCode}"
+"Headers: {Headers separated by '; '}"
 * _Total time taken to process the request_
+"Time taken: {ElapsedMilliseconds} ms"
 
 Include error handling to ensure no requests fail due to logging issues.
