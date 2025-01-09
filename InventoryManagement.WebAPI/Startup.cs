@@ -17,7 +17,7 @@ namespace InventoryManagement.WebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<InventoryDbContext>(options => options.UseInMemoryDatabase("filesdb"));
+            services.AddDbContext<InventoryDbContext>(options => options.UseInMemoryDatabase("inventorydb"));
             services.AddControllers(options => {
                 options.InputFormatters.Add(new ByteArrayInputFormatter());
             });
