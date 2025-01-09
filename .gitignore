@@ -5,6 +5,7 @@
 
 reports/
 TestResults.xml
+http_log.txt
 # User-specific files
 *.rsuser
 *.suo
