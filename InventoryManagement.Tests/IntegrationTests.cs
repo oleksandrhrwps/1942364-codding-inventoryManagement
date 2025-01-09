@@ -35,6 +35,8 @@ namespace InventoryManagement.Tests
 
         #region middleware tests
 
+        // TEST NAME - checkMiddleware
+        // TEST DESCRIPTION - the Log file exists
         [Fact]
         public async Task Test_LoggingMiddleware_LogExists()
         {
@@ -50,6 +52,8 @@ namespace InventoryManagement.Tests
 
         }
 
+        // TEST NAME - checkMiddleware
+        // TEST DESCRIPTION - requests logged successfully
         [Fact]
         public async Task Test_LoggingMiddleware_RequestLogged()
         {
@@ -69,6 +73,8 @@ namespace InventoryManagement.Tests
             Assert.Contains($"Request: POST {ApiEndpointUploadCsv}", logContent);
         }
 
+        // TEST NAME - checkMiddleware
+        // TEST DESCRIPTION - headers logged successfully
         [Fact]
         public async Task Test_LoggingMiddleware_HeadersLogged()
         {
@@ -91,6 +97,8 @@ namespace InventoryManagement.Tests
             Assert.Contains("[Content-Type, text/plain; charset=utf-8]", logContent);
         }
 
+        // TEST NAME - checkMiddleware
+        // TEST DESCRIPTION - response logged successfully
         [Fact]
         public async Task Test_LoggingMiddleware_ResponseLogged()
         {
@@ -109,6 +117,8 @@ namespace InventoryManagement.Tests
             Assert.Contains($"Response: 200", logContent);
         }
 
+        // TEST NAME - checkMiddleware
+        // TEST DESCRIPTION - time logged successfully
         [Fact]
         public async Task Test_LoggingMiddleware_TimeLogged()
         {
@@ -131,6 +141,8 @@ namespace InventoryManagement.Tests
 
         #region Endpoints Tests
 
+        // TEST NAME - uploadCsv
+        // TEST DESCRIPTION - upload CSV and check the response
         [Fact]
         public async Task Test_UploadCsv_Returns200()
         {
@@ -140,6 +152,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
 
+        // TEST NAME - uploadCsv
+        // TEST DESCRIPTION - upload CSV with invalid Date and check the response
         [Fact]
         public async Task Test_UploadCsv_InvalidDate_Returns400()
         {
@@ -156,6 +170,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         }
 
+        // TEST NAME - uploadCsv
+        // TEST DESCRIPTION - upload CSV with invalid GUID and check the response
         [Fact]
         public async Task Test_UploadCsv_InvalidGuid_Returns400()
         {
@@ -172,6 +188,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         }
 
+        // TEST NAME - uploadCsv
+        // TEST DESCRIPTION - upload CSV with invalid Location Name and check the response
         [Fact]
         public async Task Test_UploadCsv_InvalidStorageLocationName_Returns400()
         {
@@ -188,6 +206,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         }
 
+        // TEST NAME - verifyItem
+        // TEST DESCRIPTION - try to verify a non-existent Item and check the response
         [Fact]
         public async Task Test_VerifyItem_Returns404()
         {
@@ -202,6 +222,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
         }
 
+        // TEST NAME - verifyItem
+        // TEST DESCRIPTION - try to verify an existent Item in a correct Location and check the response
         [Fact]
         public async Task Test_VerifyItem_Returns200()
         {
@@ -233,6 +255,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
 
+        // TEST NAME - verifyItem
+        // TEST DESCRIPTION - try to verify an existent Item in a wrong Location and check the response
         [Fact]
         public async Task Test_VerifyItem_Returns400()
         {
@@ -265,6 +289,8 @@ namespace InventoryManagement.Tests
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
         }
 
+        // TEST NAME - getDiscrepancies
+        // TEST DESCRIPTION - try to get discrepancies
         [Fact]
         public async Task Test_GetDiscrepancies_Returns200()
         {
