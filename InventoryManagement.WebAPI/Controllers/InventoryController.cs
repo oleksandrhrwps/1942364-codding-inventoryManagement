@@ -25,7 +25,7 @@ namespace InventoryManagement.WebAPI.Controllers
         }
 
         [HttpGet("discrepancies")]
-        public async Task<IActionResult> GetDiscrepancies(DateTime? scanningDate = null, string storageLocation = "")
+        public async Task<IActionResult> GetDiscrepancies(DateTime? scanningDate = null, string? storageLocation = null)
         {
             throw new NotImplementedException();
         }
